@@ -38,9 +38,6 @@ app.get('/', async (req, res) => {
 
         // Send the access token back to the client as a query parameter
         const slackToken = response.data.access_token;
-
-        // Join all channels
-        await joinAllChannels(slackToken);
         
         const data = encodeURIComponent(response.data.access_token);
         res.redirect(`${LINK}/slack/use?info=${data}`);
