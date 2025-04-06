@@ -51,42 +51,6 @@ app.get('/', async (req, res) => {
     }
 });
 
-// Function to join all channels
-async function joinAllChannels(token) {
-    try {
-        // Get the list of all channels
-        const channelsResponse = await axios.get("https://slack.com/api/conversations.list", {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { types: "public_channel,private_channel" } // Include both public and private channels
-        });
-
-        if (!channelsResponse.data.ok) {
-            console.error("Failed to fetch channels:", channelsResponse.data.error);
-            return;
-        }
-
-        const channels = channelsResponse.data.channels;
-
-        // Join each channel
-        for (const channel of channels) {
-            if (!channel.is_member) {
-                const joinResponse = await axios.post("https://slack.com/api/conversations.join", null, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    params: { channel: channel.id }
-                });
-
-                if (joinResponse.data.ok) {
-                    console.log(`Joined channel: ${channel.name}`);
-                } else {
-                    console.error(`Failed to join channel ${channel.name}:`, joinResponse.data.error);
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Error joining channels:", error);
-    }
-}
-
 // Example route to demonstrate token usage
 app.get('/slack/use', async (req, res) => {
     const slackToken = req.query.token;
@@ -114,10 +78,65 @@ app.get('/slack/use', async (req, res) => {
     }
 });
 
-app.get('/slack/redirect', (req, res) => {
-    res.send("Redirecting to Slack authentication...");
-})
+// Route to send a DM to a user
+// Route to send a DM to a user using their username
+app.post('/slack/dm', express.json(), async (req, res) => {
+    const { token, username, message } = req.body;
 
+    if (!token || !username || !message) {
+        return res.status(400).send("Missing required parameters: token, username, or message.");
+    }
+
+    try {
+        // Fetch the list of users to find the user ID by username
+        const usersResponse = await axios.get("https://slack.com/api/users.list", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!usersResponse.data.ok) {
+            return res.status(400).send(`Failed to fetch users: ${usersResponse.data.error}`);
+        }
+
+        // Find the user by username
+        const user = usersResponse.data.members.find(member => member.name === username);
+
+        if (!user) {
+            return res.status(404).send(`User with username "${username}" not found.`);
+        }
+
+        const userId = user.id;
+
+        // Open a DM channel with the user
+        const openChannelResponse = await axios.post("https://slack.com/api/conversations.open", {
+            users: userId
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!openChannelResponse.data.ok) {
+            return res.status(400).send(`Failed to open DM channel: ${openChannelResponse.data.error}`);
+        }
+
+        const channelId = openChannelResponse.data.channel.id;
+
+        // Send the message to the DM channel
+        const messageResponse = await axios.post("https://slack.com/api/chat.postMessage", {
+            channel: channelId,
+            text: message
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (messageResponse.data.ok) {
+            res.send(`Message sent successfully to user "${username}"`);
+        } else {
+            res.status(400).send(`Failed to send message: ${messageResponse.data.error}`);
+        }
+    } catch (error) {
+        console.error("Error sending DM:", error);
+        res.status(500).send("An error occurred while sending the DM.");
+    }
+});
 app.get('/slack/redirect', (req, res) => {
     res.send("Redirecting to Slack authentication...");
 })
