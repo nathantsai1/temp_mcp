@@ -89,20 +89,43 @@ app.post('/slack/dm', express.json(), async (req, res) => {
         const usersResponse = await axios.get("https://slack.com/api/users.list", {
             headers: { Authorization: `Bearer ${token}` }
         });
-        console.log(usersResponse.data);
         if (!usersResponse.data.ok) {
-            return res.status(400).send(`Failed to fetch users: ${usersResponse.data.error}`);
+            return res.send({
+                "purpose": "send_message",
+                "channel": "NULL",
+                "header": "failed",
+                "message": "System error"
+            });
+        }
+        let is_member = false;
+        let temp_data = [];
+        const results = usersResponse.data.toJSON();
+        console.log(results);
+        for (let i=0; i < results.length; i++) {
+            if (results.members[i].profile.display_name === username) {
+                is_member = true;
+                temp_data.push(results.members[i]);
+                break;
+            }
+        }
+        if (is_member === false) {
+            res.send({
+                "purpose": "send_message",
+                "channel": "NULL",
+                "header": "Failed",
+                "message": "User not found"
+            });
         }
 
         // Find the user by username
-        const user = usersResponse.data.members.find(member => member.name === username);
-        console.log(usersResponse.data.members.map(member => member.name));
-        if (!user) {
-            return res.status(404).send(`User with username "${username}" not found.`);
-        }
+        const user = usersResponse.data.members.find(member => member.profile.display_name === username);
+        console.log(user)
+        // if (!user) {
+        //     return res.status(404).send(`User with username "${username}" not found.`);
+        // }
 
-        const userId = user.id;
-
+        const userId = temp_data.id;
+        console.log("userId", userId);
         // Open a DM channel with the user
         const openChannelResponse = await axios.post("https://slack.com/api/conversations.open", {
             users: userId
@@ -185,6 +208,33 @@ app.post('/slack/channel/messages', express.json(), async (req, res) => {
     }
 });
 
+// Route to send a message using a channel or user ID
+app.post('/slack/send-message', express.json(), async (req, res) => {
+    const { token, id, message } = req.body;
+
+    if (!token || !id || !message) {
+        return res.status(400).send("Missing required parameters: token, id, or message.");
+    }
+
+    try {
+        // Send the message to the specified ID (channel or user)
+        const response = await axios.post("https://slack.com/api/chat.postMessage", {
+            channel: id, // ID can be a channel ID or user ID
+            text: message
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.data.ok) {
+            res.send(`Message sent successfully to ID "${id}"`);
+        } else {
+            res.status(400).send(`Failed to send message: ${response.data.error}`);
+        }
+    } catch (error) {
+        console.error("Error sending message:", error);
+        res.status(500).send("An error occurred while sending the message.");
+    }
+});
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running at ${LINK}`);
