@@ -92,14 +92,14 @@ app.post('/slack/dm', express.json(), async (req, res) => {
         const usersResponse = await axios.get("https://slack.com/api/users.list", {
             headers: { Authorization: `Bearer ${token}` }
         });
-
+        console.log(usersResponse.data);
         if (!usersResponse.data.ok) {
             return res.status(400).send(`Failed to fetch users: ${usersResponse.data.error}`);
         }
 
         // Find the user by username
         const user = usersResponse.data.members.find(member => member.name === username);
-
+        console.log(usersResponse.data.members.map(member => member.name));
         if (!user) {
             return res.status(404).send(`User with username "${username}" not found.`);
         }
@@ -137,9 +137,56 @@ app.post('/slack/dm', express.json(), async (req, res) => {
         res.status(500).send("An error occurred while sending the DM.");
     }
 });
-app.get('/slack/redirect', (req, res) => {
-    res.send("Redirecting to Slack authentication...");
-})
+
+// Route to fetch the last 10 messages of a channel using its name
+app.post('/slack/channel/messages', express.json(), async (req, res) => {
+    const { token, channelName } = req.body;
+
+    if (!token || !channelName) {
+        return res.status(400).send("Missing required parameters: token or channelName.");
+    }
+
+    try {
+        // Fetch the list of channels to find the channel ID by name
+        const channelsResponse = await axios.get("https://slack.com/api/conversations.list", {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { types: "public_channel,private_channel" } // Include both public and private channels
+        });
+
+        if (!channelsResponse.data.ok) {
+            return res.status(400).send(`Failed to fetch channels: ${channelsResponse.data.error}`);
+        }
+
+        // Find the channel by name
+        const channel = channelsResponse.data.channels.find(ch => ch.name === channelName);
+
+        if (!channel) {
+            return res.status(404).send(`Channel with name "${channelName}" not found.`);
+        }
+
+        const channelId = channel.id;
+
+        // Fetch the last 10 messages from the channel
+        const messagesResponse = await axios.get("https://slack.com/api/conversations.history", {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { channel: channelId, limit: 10 }
+        });
+
+        if (!messagesResponse.data.ok) {
+            return res.status(400).send(`Failed to fetch messages: ${messagesResponse.data.error}`);
+        }
+
+        // Return the last 10 messages
+        res.json({
+            success: true,
+            channel: channelName,
+            messages: messagesResponse.data.messages
+        });
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        res.status(500).send("An error occurred while fetching messages.");
+    }
+});
 
 // Start the server
 app.listen(port, () => {
