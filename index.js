@@ -89,7 +89,6 @@ async function joinAllChannels(token) {
 app.get('/slack/use', async (req, res) => {
     console.log('working');
     const slackToken = req.query.token;
-
     if (!slackToken) {
         return res.status(401).send("User not authenticated with Slack. Please authenticate first.");
     }
@@ -101,7 +100,9 @@ app.get('/slack/use', async (req, res) => {
         });
 
         if (response.status === 200 && response.data.ok) {
-            res.send(`Slack API call successful! User: ${response.data.user}`);
+            const data = encodeURIComponent(response.data);
+            res.redirect(`http://localhost:5000/slack/use?info=${data}`);
+            // res.send(`Slack API call successful! User: ${response.data.user}`);
         } else {
             res.status(400).send("Failed to interact with Slack API.");
         }
