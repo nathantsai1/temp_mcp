@@ -9,7 +9,7 @@ const LINK = process.env.LINK;
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
 const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
 const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI;
-
+const SLACK_OAUTH_URL = process.env.SLACK_OAUTH_URL;
 // Route to handle the callback from Slack
 app.get('/', async (req, res) => {
     console.log(1);
@@ -130,7 +130,7 @@ app.post('/slack/dm', express.json(), async (req, res) => {
         const openChannelResponse = await axios.post("https://slack.com/api/conversations.open", {
             users: userId
         }, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${SLACK_OAUTH_URL}` }
         });
 
         if (!openChannelResponse.data.ok) {
@@ -144,7 +144,7 @@ app.post('/slack/dm', express.json(), async (req, res) => {
             channel: channelId,
             text: message
         }, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${SLACK_OAUTH_URL}` }
         });
 
         if (messageResponse.data.ok) {
