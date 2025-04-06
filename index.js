@@ -31,8 +31,8 @@ app.get('/', async (req, res) => {
                 redirect_uri: SLACK_REDIRECT_URI
             }
         });
-
-        if (response.status !== 200 || !response.data.ok) {
+        console.log(response.data);
+        if (response.status !== 200 || !response.data.includes("ok")) {
             return res.status(400).send("Failed to retrieve access token from Slack.");
         }
 
