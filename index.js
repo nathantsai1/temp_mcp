@@ -87,7 +87,6 @@ async function joinAllChannels(token) {
 
 // Example route to demonstrate token usage
 app.get('/slack/use', async (req, res) => {
-    console.log('working');
     const slackToken = req.query.token;
     if (!slackToken) {
         return res.status(401).send("User not authenticated with Slack. Please authenticate first.");
@@ -100,7 +99,8 @@ app.get('/slack/use', async (req, res) => {
         });
 
         if (response.data.ok) {
-            const data = encodeURIComponent(response.data);
+            console.log(response.data)
+            const data = encodeURIComponent(response.data.access_token);
             res.redirect(`${LINK}/slack/use?info=${data}`);
             // res.send(`Slack API call successful! User: ${response.data.user}`);
         } else {
@@ -112,7 +112,16 @@ app.get('/slack/use', async (req, res) => {
     }
 });
 
+app.get('/slack/redirect', (req, res) => {
+    res.send("Redirecting to Slack authentication...");
+})
+
+app.get('/slack/redirect', (req, res) => {
+    res.send("Redirecting to Slack authentication...");
+})
+
 // Start the server
 app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+    console.log(`Server is running at ${LINK}`);
 });
+
