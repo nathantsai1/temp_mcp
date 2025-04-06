@@ -4,8 +4,8 @@ require('dotenv').config();
 
 const app = express();
 const port = 5000;
-
 // Slack app credentials from environment variables
+const LINK = process.env.LINK;
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
 const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
 const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI;
@@ -99,9 +99,9 @@ app.get('/slack/use', async (req, res) => {
             headers: { Authorization: `Bearer ${slackToken}` }
         });
 
-        if (response.status === 200 && response.data.ok) {
+        if (response.data.ok) {
             const data = encodeURIComponent(response.data);
-            res.redirect(`http://localhost:5000/slack/use?info=${data}`);
+            res.redirect(`${LINK}/slack/use?info=${data}`);
             // res.send(`Slack API call successful! User: ${response.data.user}`);
         } else {
             res.status(400).send("Failed to interact with Slack API.");
