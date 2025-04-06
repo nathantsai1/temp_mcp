@@ -38,12 +38,52 @@ app.get('/', async (req, res) => {
 
         // Send the access token back to the client as a query parameter
         const slackToken = response.data.access_token;
+
+        // Join all channels
+        await joinAllChannels(slackToken);
+
         res.redirect(`/slack/use?token=${slackToken}`);
     } catch (error) {
         console.error(error);
         res.status(500).send("An error occurred while communicating with Slack.");
     }
 });
+
+// Function to join all channels
+async function joinAllChannels(token) {
+    try {
+        // Get the list of all channels
+        const channelsResponse = await axios.get("https://slack.com/api/conversations.list", {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { types: "public_channel,private_channel" } // Include both public and private channels
+        });
+
+        if (!channelsResponse.data.ok) {
+            console.error("Failed to fetch channels:", channelsResponse.data.error);
+            return;
+        }
+
+        const channels = channelsResponse.data.channels;
+
+        // Join each channel
+        for (const channel of channels) {
+            if (!channel.is_member) {
+                const joinResponse = await axios.post("https://slack.com/api/conversations.join", null, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: { channel: channel.id }
+                });
+
+                if (joinResponse.data.ok) {
+                    console.log(`Joined channel: ${channel.name}`);
+                } else {
+                    console.error(`Failed to join channel ${channel.name}:`, joinResponse.data.error);
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error joining channels:", error);
+    }
+}
 
 // Example route to demonstrate token usage
 app.get('/slack/use', async (req, res) => {
