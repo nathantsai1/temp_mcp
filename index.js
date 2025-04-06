@@ -3,7 +3,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-const port = 3000;
+const port = 5000;
 
 // Slack app credentials from environment variables
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
@@ -32,7 +32,7 @@ app.get('/', async (req, res) => {
             }
         });
         console.log(response.data);
-        if (response.status !== 200 || !response.data.includes("ok")) {
+        if (response.status !== 200 || !response.data.ok) {
             return res.status(400).send("Failed to retrieve access token from Slack.");
         }
 
@@ -60,7 +60,7 @@ app.get('/slack/use', async (req, res) => {
             headers: { Authorization: `Bearer ${slackToken}` }
         });
 
-        if (response.status === 200 && response.data.includes("ok")) {
+        if (response.status === 200 && response.data.ok) {
             res.send(`Slack API call successful! User: ${response.data.user}`);
         } else {
             res.status(400).send("Failed to interact with Slack API.");
