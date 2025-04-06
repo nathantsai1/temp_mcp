@@ -60,7 +60,7 @@ app.get('/slack/use', async (req, res) => {
             headers: { Authorization: `Bearer ${slackToken}` }
         });
 
-        if (response.status === 200 && response.data.ok) {
+        if (response.status === 200 && response.data.includes("ok")) {
             res.send(`Slack API call successful! User: ${response.data.user}`);
         } else {
             res.status(400).send("Failed to interact with Slack API.");
