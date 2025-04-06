@@ -10,21 +10,8 @@ const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
 const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
 const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI;
 
-// Route to redirect user to Slack's OAuth authorization page
-app.get('/slack/auth', (req, res) => {
-    console.log(1);
-    try {
-        const slackAuthUrl = `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,chat:write&redirect_uri=${SLACK_REDIRECT_URI}`;
-        console.log(`Redirecting to Slack auth URL: ${slackAuthUrl}`);
-        res.redirect(slackAuthUrl);
-    } catch (error) {
-        console.error(`Error during Slack authentication: ${error}`);
-        res.status(500).send("Error during Slack authentication. Please try again.");
-    }
-});
-
 // Route to handle the callback from Slack
-app.get('/slack/callback', async (req, res) => {
+app.get('/', async (req, res) => {
     console.log(1);
     const code = req.query.code;
     console.log(code);
