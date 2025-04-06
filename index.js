@@ -41,8 +41,10 @@ app.get('/', async (req, res) => {
 
         // Join all channels
         await joinAllChannels(slackToken);
-
-        res.redirect(`/slack/use?token=${slackToken}`);
+        
+        const data = encodeURIComponent(response.data.access_token);
+        res.redirect(`${LINK}/slack/use?info=${data}`);
+        // res.redirect(`/slack/use?token=${slackToken}`);
     } catch (error) {
         console.error(error);
         res.status(500).send("An error occurred while communicating with Slack.");
